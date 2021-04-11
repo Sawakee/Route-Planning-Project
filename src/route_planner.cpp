@@ -106,7 +106,8 @@ void RoutePlanner::AStarSearch() {
     start_node->visited = true;
     while(!open_list.empty()) {
         AddNeighbors(current_node);
-        if (current_node->distance(end_node) == 0){
+        current_node = NextNode();
+        if (current_node->distance(*end_node) == 0){
             m_Model.path = ConstructFinalPath(current_node);
             return;
         }
