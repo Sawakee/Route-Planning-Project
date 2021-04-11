@@ -10,8 +10,12 @@ RoutePlanner::RoutePlanner(RouteModel &model, float start_x, float start_y, floa
 
     // TODO 2: Use the m_Model.FindClosestNode method to find the closest nodes to the starting and ending coordinates.
     // Store the nodes you find in the RoutePlanner's start_node and end_node attributes.
-    *start_node = m_Model.FindClosestNode(start_x, start_y);
-    *end_node = m_Model.FindClosestNode(end_x, end_y);
+    start_node = &m_Model.FindClosestNode(start_x, start_y);
+    end_node = &m_Model.FindClosestNode(end_x, end_y);
+
+    // If I wrote this instead of avobe, segmentation fault was happened.
+    // Why?
+    // *start_node = m_Model.FindClosestNode(start_x, start_y);
 }
 
 
@@ -75,12 +79,13 @@ std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node 
     std::vector<RouteModel::Node> path_found;
 
     // TODO: Implement your solution here.
-    path_found.push_back(*current_node);
-    while (path_found.back() != *start_node) {
-        distance += path_found.back().distance(*path_found.back().parent);
-        path_found.push_back(*path_found.back().parent);
+    while (current_node->parent != nullptr) {
+        path_found.push_back(*current_node);
+        distance += current_node->distance( *(current_node->parent));
+        current_node = current_node->parent;
     }
-
+    path_found.push_back( *current_node);
+    std::reverse(path_found.begin(), path_found.end());
     distance *= m_Model.MetricScale(); // Multiply the distance by the scale of the map to get meters.
     return path_found;
 }
@@ -98,12 +103,13 @@ void RoutePlanner::AStarSearch() {
 
     // TODO: Implement your solution here.
     current_node = start_node;
-    while (1) {
-    AddNeighbors(current_node);
-        current_node = NextNode();
-        if (current_node->x == end_node->x && current_node->y == end_node->y){
+    start_node->visited = true;
+    while(!open_list.empty()) {
+        AddNeighbors(current_node);
+        if (current_node->distance(end_node) == 0){
             m_Model.path = ConstructFinalPath(current_node);
-            break;
+            return;
         }
     }
+    fprintf(stderr,"You cannot reach the goal.");
 }
